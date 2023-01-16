@@ -3,9 +3,123 @@
   <head>
     <meta charset="UTF-8">
     <title>Ears!</title>
+
+    <style>
+      body {
+        background-color: #222;
+        color: #eee;
+        font-size: 32pt;
+      }
+
+      header {
+        display: flex;
+        border-bottom: 1px solid #eee;
+      }
+
+      header > * {
+        display: flex;
+        align-items: center;
+      }
+
+      header > *:nth-child(2) {
+        flex-grow: 1;
+      }
+
+      header > *:not(:nth-child(2)) {
+        justify-content: center;
+        padding: 32px;
+      }
+
+      h1 {
+        font-size: 48pt;
+        margin: 0;
+      }
+    </style>
+
+    <script type="text/javascript">
+      const state = {
+        data: {},
+      };
+
+      function loadData() {
+        state.data = {
+          '1': {
+            name: 'ohariz',
+            pattern: {
+              id: '1',
+              hue: 0,
+              speed: 5,
+              reverse: false,
+            },
+          },
+          '2': {
+            name: 'ohariz',
+            pattern: {
+              id: '1',
+              hue: 0,
+              speed: 5,
+              reverse: false,
+            },
+          },
+          '3': {
+            name: 'ohariz',
+            pattern: {
+              id: '1',
+              hue: 0,
+              speed: 5,
+              reverse: false,
+            },
+          },
+          '4': {
+            name: 'ohariz',
+            pattern: {
+              id: '1',
+              hue: 0,
+              speed: 5,
+              reverse: false,
+            },
+          },
+        };
+      }
+
+      function render() {
+
+        const main = document.querySelector('#main');
+        const newChildren = [];
+        Object.entries(state.data).forEach(([key, value]) => {
+          const elementId = `config-${key}`;
+          const existingElement = document.querySelector(elementId);
+          if (existingElement) {
+            newChildren.push(existingElement);
+            return;
+          }
+          const newElement = document.createElement('div');
+          newElement.setAttribute('id', elementId);
+          newElement.setAttribute('class', 'configElement');
+          newElement.append(
+            `${value.name}: ${value.pattern.id}, ${value.pattern.hue}, ${value.pattern.speed}, ${value.pattern.reverse}`
+          );
+          newChildren.push(newElement);
+        });
+        main.replaceChildren(...newChildren);
+      }
+
+      window.addEventListener('load', () => {
+        loadData();
+        render();
+      });
+    </script>
   </head>
 
   <body>
-    <h1>Ears?</h1>
+    <header>
+      <div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 128 128"><path id="Selection" fill="currentColor" stroke="currentColor" stroke-width="1" d="M 0.00,17.00 C 0.00,29.87 1.73,46.86 6.09,59.00 8.78,66.49 12.51,70.04 13.34,73.00 14.29,76.09 12.84,78.20 13.34,83.00 14.38,94.28 16.81,101.49 23.00,111.00 25.31,110.00 28.59,108.65 29.13,105.83 29.56,103.52 26.69,99.26 25.67,97.00 23.47,92.13 22.14,87.36 22.01,82.00 21.49,59.42 39.50,40.05 62.00,38.51 76.60,37.52 90.98,46.08 98.90,58.00 105.70,68.24 107.54,80.28 104.09,92.00 104.09,92.00 98.81,104.91 98.81,104.91 98.73,108.32 102.40,109.88 105.00,111.00 110.88,100.47 115.20,91.48 114.49,79.00 113.87,68.19 119.02,68.69 122.56,57.00 126.42,44.24 128.00,30.28 128.00,17.00 119.28,17.19 98.31,20.22 90.00,22.72 79.49,25.88 79.07,28.75 75.83,29.93 73.94,30.58 68.44,30.01 66.00,29.93 66.00,29.93 52.17,29.93 52.17,29.93 48.83,28.71 48.45,25.67 37.00,22.43 28.92,20.14 8.40,17.18 0.00,17.00 Z M 9.94,26.00 C 21.53,29.31 29.44,27.57 42.00,34.00 32.61,41.86 28.72,36.23 18.00,36.00 18.00,36.00 20.87,53.00 20.87,53.00 20.87,53.00 17.00,61.00 17.00,61.00 12.50,54.71 10.93,43.64 9.94,36.00 9.33,32.09 8.50,29.81 9.94,26.00 Z M 119.00,26.00 C 118.92,34.93 116.12,53.85 111.00,61.00 111.00,61.00 107.13,53.00 107.13,53.00 107.13,53.00 110.00,36.00 110.00,36.00 95.99,36.31 95.51,41.96 86.00,34.00 98.21,27.75 106.93,28.94 119.00,26.00 Z" /></svg>
+      </div>
+      <div>
+        <h1>Ears</h1>
+      </div>
+    </header>
+    <div id="main" />
   </body>
 </html>
