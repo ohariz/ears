@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Ears!</title>
 
     <style>
@@ -11,7 +11,22 @@
         font-size: 32pt;
       }
 
+      #wrapper {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: calc(100vh - 128px);
+        display: flex;
+        flex-direction: column;
+      }
+
       header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 128px;
         display: flex;
         border-bottom: 1px solid #eee;
       }
@@ -34,78 +49,261 @@
         font-size: 48pt;
         margin: 0;
       }
+
+      #main {
+        overflow-y: auto;
+        flex: 1 1;
+      }
+
+      .configElement {
+        border-bottom: 1px solid #999;
+        padding: 16px;
+      }
+
+      .configElement.selected {
+        background-color: #333;
+      }
+
+      .configElement > *:not(:first-child) {
+        margin-top: 8px;
+      }
+
+      #editor.open {
+        background-color: #222;
+        border-top: 1px solid #eee;
+        padding: 32px;
+        display: table;
+      }
+
+      #editor > * {
+        display: table-row;
+        height: 78px;
+      }
+
+      #editor > * > * {
+        display: table-cell;
+      }
+
+      select {
+        font-size: 24pt;
+        padding: 8px;
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        touch-action: none;
+        width: 300px;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        border: 1px solid #000;
+        border-radius: 0;
+        background-color: #fff;
+        height: 28px;
+        margin-top: -4px;
+        width: 12px;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 20px;
+        background: linear-gradient(
+          to right,
+          white,
+          blue
+        );
+      }
+
+      .colorPicker::-webkit-slider-runnable-track {
+        background: linear-gradient(
+          to right,
+          hsl(0 100% 50%) 0%,
+          hsl(0.1turn 100% 50%) 10%,
+          hsl(0.2turn 100% 50%) 20%,
+          hsl(0.3turn 100% 50%) 30%,
+          hsl(0.4turn 100% 50%) 40%,
+          hsl(0.5turn 100% 50%) 50%,
+          hsl(0.6turn 100% 50%) 60%,
+          hsl(0.7turn 100% 50%) 70%,
+          hsl(0.8turn 100% 50%) 80%,
+          hsl(0.9turn 100% 50%) 90%,
+          hsl(1turn 100% 50%) 100%
+        ) !important;
+      }
+
+      input[type="checkbox"] {
+        height: 32px;
+        width: 32px;
+      }
+
     </style>
 
     <script type="text/javascript">
-      const state = {
-        data: {},
+      const API_URL = 'http://localhost:3000';
+      const PATTERNS = {
+        '1': 'Pattern 1',
+        '2': 'Pattern 2',
+        '3': 'Pattern 3',
+        '4': 'Pattern 4',
+        '5': 'Pattern 5',
       };
 
-      function loadData() {
-        state.data = {
-          '1': {
-            name: 'ohariz',
-            pattern: {
-              id: '1',
-              hue: 0,
-              speed: 5,
-              reverse: false,
-            },
-          },
-          '2': {
-            name: 'ohariz',
-            pattern: {
-              id: '1',
-              hue: 0,
-              speed: 5,
-              reverse: false,
-            },
-          },
-          '3': {
-            name: 'ohariz',
-            pattern: {
-              id: '1',
-              hue: 0,
-              speed: 5,
-              reverse: false,
-            },
-          },
-          '4': {
-            name: 'ohariz',
-            pattern: {
-              id: '1',
-              hue: 0,
-              speed: 5,
-              reverse: false,
-            },
-          },
-        };
+      const state = {
+        data: {},
+        selected: null,
+        editorData: {},
+      };
+
+      async function apiGet(endpoint) {
+        const response = await fetch(`${API_URL}${endpoint}`);
+        return response.json();
+      }
+
+      async function apiPost(endpoint, data) {
+        await fetch(`${API_URL}${endpoint}`, {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      async function loadData() {
+        const ids = await apiGet('/list');
+        const patterns = await Promise.all(ids.map(id => apiGet(`/config/${id}`)));
+        state.data = {};
+        ids.forEach((id, index) => {
+          if (patterns[index]) {
+            state.data[id] = patterns[index];
+          }
+        });
+      }
+
+      async function updateSelectedData() {
+        await apiPost(`/config/${state.selected}`, state.data[state.selected]);
+        render();
+      }
+
+      function renderEdit() {
+        const editorElement = document.querySelector('#editor');
+        editorElement.replaceChildren();
+        if (state.selected == null) {
+          editorElement.setAttribute('class', '');
+          return;
+        }
+        editorElement.setAttribute('class', 'open');
+
+        editorData = { ...state.data[state.selected].pattern };
+        
+        const patternSelect = document.createElement('select');
+        patternSelect.setAttribute('id', 'patternSelect');
+        Object.entries(PATTERNS).forEach(([id, name]) => {
+          const option = document.createElement('option');
+          option.setAttribute('value', id);
+          if (editorData.id === id) {
+            option.setAttribute('selected', '');
+          }
+          option.innerHTML = name;
+          patternSelect.appendChild(option);
+        });
+        const patternSelectRow = document.createElement('div');
+        const patternSelectLabel = document.createElement('label');
+        patternSelectLabel.setAttribute('for', 'patternSelect');
+        patternSelectLabel.innerHTML = 'Pattern: ';
+        patternSelectRow.appendChild(patternSelectLabel);
+        patternSelectRow.appendChild(patternSelect);
+        editorElement.appendChild(patternSelectRow);
+        patternSelect.addEventListener('change', async ({ target: { value } }) => {
+          state.data[state.selected].pattern.id = value;
+          await updateSelectedData();
+        });
+
+        const hueInput = document.createElement('input');
+        hueInput.setAttribute('type', 'range');
+        hueInput.setAttribute('min', 0);
+        hueInput.setAttribute('max', 255);
+        hueInput.setAttribute('class', 'colorPicker');
+        hueInput.setAttribute('value', editorData.hue);
+        const hueInputRow = document.createElement('div');
+        const hueInputLabel = document.createElement('label');
+        hueInputLabel.setAttribute('for', 'hueInput');
+        hueInputLabel.innerHTML = 'Hue: ';
+        hueInputRow.appendChild(hueInputLabel);
+        hueInputRow.appendChild(hueInput);
+        editorElement.appendChild(hueInputRow);
+        hueInput.addEventListener('change', async ({ target: { value } }) => {
+          state.data[state.selected].pattern.hue = parseInt(value, 10);
+          await updateSelectedData();
+        });
+
+        const speedInput = document.createElement('input');
+        speedInput.setAttribute('type', 'range');
+        speedInput.setAttribute('min', 1);
+        speedInput.setAttribute('max', 10);
+        speedInput.setAttribute('value', editorData.speed);
+        const speedInputRow = document.createElement('div');
+        const speedInputLabel = document.createElement('label');
+        speedInputLabel.setAttribute('for', 'speedInput');
+        speedInputLabel.innerHTML = 'Speed: ';
+        speedInputRow.appendChild(speedInputLabel);
+        speedInputRow.appendChild(speedInput);
+        editorElement.appendChild(speedInputRow);
+        speedInput.addEventListener('change', async ({ target: { value } }) => {
+          state.data[state.selected].pattern.speed = parseInt(value, 10);
+          await updateSelectedData();
+        });
+
+        const reverseInput = document.createElement('input');
+        reverseInput.setAttribute('type', 'checkbox');
+        if (editorData.reverse) {
+          reverseInput.setAttribute('checked', '');
+        }
+        const reverseInputRow = document.createElement('div');
+        const reverseInputLabel = document.createElement('label');
+        reverseInputLabel.setAttribute('for', 'reverseInput');
+        reverseInputLabel.innerHTML = 'Reverse: ';
+        reverseInputRow.appendChild(reverseInputLabel);
+        reverseInputRow.appendChild(reverseInput);
+        editorElement.appendChild(reverseInputRow);
+        reverseInput.addEventListener('change', async ({ target: { checked } }) => {
+          state.data[state.selected].pattern.reverse = checked;
+          await updateSelectedData();
+        });
+      }
+
+      function onSelect(selectedKey) {
+        state.selected = state.selected === selectedKey ? null : selectedKey;
+        Object.keys(state.data).forEach((key) => {
+          const element = document.querySelector(`#config-${key}`);
+          if (key === state.selected) {
+            element.setAttribute('class', 'configElement selected');
+          } else {
+            element.setAttribute('class', 'configElement');
+          }
+        });
+        renderEdit();
       }
 
       function render() {
-
-        const main = document.querySelector('#main');
         const newChildren = [];
         Object.entries(state.data).forEach(([key, value]) => {
-          const elementId = `config-${key}`;
-          const existingElement = document.querySelector(elementId);
-          if (existingElement) {
-            newChildren.push(existingElement);
-            return;
-          }
           const newElement = document.createElement('div');
-          newElement.setAttribute('id', elementId);
+          newElement.setAttribute('id', `config-${key}`);
           newElement.setAttribute('class', 'configElement');
-          newElement.append(
-            `${value.name}: ${value.pattern.id}, ${value.pattern.hue}, ${value.pattern.speed}, ${value.pattern.reverse}`
-          );
+          const titleElement = document.createElement('div');
+          titleElement.append(value.name);
+          const contentElement = document.createElement('div');
+          contentElement.append(`${value.pattern.id}, ${value.pattern.hue}, ${value.pattern.speed}, ${value.pattern.reverse}`);
+          newElement.append(titleElement, contentElement);
+          newElement.addEventListener('click', () => { onSelect(key); });
           newChildren.push(newElement);
         });
-        main.replaceChildren(...newChildren);
+        document.querySelector('#main').replaceChildren(...newChildren);
       }
 
-      window.addEventListener('load', () => {
-        loadData();
+      window.addEventListener('load', async () => {
+        await loadData();
         render();
       });
     </script>
@@ -120,6 +318,9 @@
         <h1>Ears</h1>
       </div>
     </header>
-    <div id="main" />
+    <div id="wrapper">
+      <div id="main"></div>
+      <div id="editor"></div>
+    </div>
   </body>
 </html>
